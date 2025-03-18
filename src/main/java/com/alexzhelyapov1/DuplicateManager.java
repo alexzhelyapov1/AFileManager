@@ -9,7 +9,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+
+@FunctionalInterface
+interface ThrowingFunction<T, R, E extends Exception> {
+    R apply(T t) throws E;
+}
 
 public class DuplicateManager {
 
@@ -19,9 +25,17 @@ public class DuplicateManager {
         this.directories = directories;
     }
 
-    public Map<byte[], List<File>> buildHashTable() throws InterruptedException, ExecutionException {
+    public Map<String, List<File>> hashDuplicated() throws Exception { // Пробрасываем Exception
+        return buildHashTable((ThrowingFunction<File, String, Exception>) File::getSha512Hash);
+    }
+
+    public Map<String, List<File>> basenameDuplicated() throws ExecutionException, InterruptedException {
+        return buildHashTable(File::getBaseName);
+    }
+
+    private <E extends Exception> Map<String, List<File>> buildHashTable(ThrowingFunction<File, String, E> keyExtractor) throws InterruptedException, ExecutionException, E {
         //Используем ConcurrentHashMap для потокобезопасности
-        ConcurrentHashMap<byte[], List<File>> hashTable = new ConcurrentHashMap<>();
+        ConcurrentHashMap<String, List<File>> hashTable = new ConcurrentHashMap<>();
 
         // Создаем пул потоков с фиксированным размером, равным количеству доступных процессоров
         // Это позволяет контролировать количество одновременно выполняемых задач.
@@ -36,13 +50,8 @@ public class DuplicateManager {
                 for (File file : directory.getFiles()) {
                     // Создаем задачу Callable для вычисления хеша файла
                     Callable<Void> task = () -> {
-                        try {
-                            byte[] hash = file.getSha512Hash(); // Вычисляем хеш
-                            // Потокобезопасное добавление в ConcurrentHashMap
-                            hashTable.computeIfAbsent(hash, k -> new ArrayList<>()).add(file);
-                        } catch (NoSuchAlgorithmException | IOException e) {
-                            System.err.println("Error calculating hash for file: " + file.getPath() + ": " + e.getMessage());
-                        }
+                        String key = keyExtractor.apply(file);
+                        hashTable.computeIfAbsent(key, k -> new ArrayList<>()).add(file);
                         return null; // Возвращаем null, так как результат не нужен
                     };
                     // Отправляем задачу на выполнение в пул потоков
@@ -52,7 +61,7 @@ public class DuplicateManager {
                 // Рекурсивный вызов для поддиректорий
                 if (!directory.getSubdirectories().isEmpty()) {
                     DuplicateManager subManager = new DuplicateManager(directory.getSubdirectories());
-                    Map<byte[], List<File>> subHashTable = subManager.buildHashTable();
+                    Map<String, List<File>> subHashTable = subManager.buildHashTable(keyExtractor);
 
                     // Объединяем результаты из поддиректорий с текущими результатами
                     subHashTable.forEach((hash, files) ->
@@ -69,26 +78,29 @@ public class DuplicateManager {
         return hashTable;
     }
 
+    public static void printHashMap(Map<String, List<File>> map) {
+        for (Map.Entry<String, List<File>> entry : map.entrySet()) {
+            System.out.println("Key: " + entry.getKey());
+            for (File file : entry.getValue()) {
+                System.out.println("    - Filepath: " + file.getPath());
+            }
+        }
+    }
+
     public static void main(String[] args) {
         try {
-            Directory test_directory = new Directory("C:\\Users\\Alex\\Desktop\\MAga");
+            Directory test_directory = new Directory(Test.CreateTestDirectory());
             test_directory.scan();
             List<Directory> directories = new ArrayList<>();
             directories.add(test_directory);
             DuplicateManager dm = new DuplicateManager(directories);
-            Map<byte[], List<File>> res = dm.buildHashTable();
-            for (Map.Entry<byte[], List<File>> entry : res.entrySet()) {
-                System.out.println("Hash: " + Tools.bytesToString(entry.getKey()));
-                for (File file : entry.getValue()) {
-                    System.out.println("    - Filepath: " + file.getPath());
-                }
-            }
 
-        } catch (IOException | NoSuchAlgorithmException | InterruptedException | ExecutionException e) {
+            printHashMap(dm.hashDuplicated());
+            printHashMap(dm.basenameDuplicated());
+
+        } catch (Exception e) {
             System.err.println("Main error: " + e.getMessage());
             e.printStackTrace();  //  Вывод стека вызовов для отладки
         }
-
-
     }
 }

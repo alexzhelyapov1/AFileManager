@@ -19,9 +19,9 @@ public class Main {
             List<File> files = test_directory.getFiles();
             for (File entry : files) {
                 System.out.println("File path: " + entry.getPath());
-                System.out.println("SHA-512 hash: " + entry.getSha512HashString());
+                System.out.println("SHA-512 hash: " + entry.getSha512Hash());
             }
-            if (Arrays.equals(files.get(1).getSha512Hash(), files.get(2).getSha512Hash())) {
+            if (Objects.equals(files.get(1).getSha512Hash(), files.get(2).getSha512Hash())) {
                 System.out.println("Equals!!!");
             }
 
