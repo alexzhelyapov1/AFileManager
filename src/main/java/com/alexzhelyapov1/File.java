@@ -37,12 +37,7 @@ public class File {
     }
 
     public String getSha512HashString() throws IOException, NoSuchAlgorithmException {
-        // Преобразование байтового массива в шестнадцатеричную строку
-        StringBuilder sb = new StringBuilder();
-        for (byte b : getSha512Hash()) {
-            sb.append(String.format("%02x", b));
-        }
-        return sb.toString();
+        return Tools.bytesToString(getSha512Hash());
     }
 
     public byte[] getSha512Hash() throws IOException, NoSuchAlgorithmException {
