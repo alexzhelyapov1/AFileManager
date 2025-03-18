@@ -52,7 +52,15 @@ public class File {
         return sha512Hash;
     }
 
-    public Instant getLastEditTime() {
+    public Instant getLastEditTime() throws IOException {
+        if (lastEditTime == null) {
+            if (!Files.exists(filePath) || Files.isDirectory(filePath)) {
+                throw new IOException("File does not exist or is a directory: " + filePath);
+            }
+            BasicFileAttributes attrs = Files.readAttributes(filePath, BasicFileAttributes.class);
+            this.lastEditTime = attrs.lastModifiedTime().toInstant();
+        }
+
         return lastEditTime;
     }
 
