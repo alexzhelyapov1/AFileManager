@@ -1,17 +1,35 @@
 package com.alexzhelyapov1;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main {
     public static void main(String[] args) {
-        //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-        // to see how IntelliJ IDEA suggests fixing it.
         System.out.printf("Hello and welcome!");
 
-        for (int i = 1; i <= 5; i++) {
-            //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-            // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-            System.out.println("i = " + i);
+        try {
+            Directory test_directory = new Directory("C:\\Users\\Alex\\Desktop\\MAga");
+            test_directory.scan();
+            List<File> files = test_directory.getFiles();
+            for (File entry : files) {
+                System.out.println("File path: " + entry.getPath());
+                System.out.println("SHA-512 hash: " + entry.getSha512HashString());
+            }
+            if (Arrays.equals(files.get(1).getSha512Hash(), files.get(2).getSha512Hash())) {
+                System.out.println("Equals!!!");
+            }
+
+        } catch (IOException | NoSuchAlgorithmException e) {
+            System.err.println("Main error: " + e.getMessage());
+            e.printStackTrace();  //  Вывод стека вызовов для отладки
         }
+
+
     }
 }

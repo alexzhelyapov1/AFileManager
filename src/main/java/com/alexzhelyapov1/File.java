@@ -13,7 +13,7 @@ import java.time.Instant;
 public class File {
 
     private final Path filePath;
-    private String sha512Hash; // Храним хеш, чтобы не вычислять каждый раз
+    private byte[] sha512Hash; // Храним хеш, чтобы не вычислять каждый раз
     private Instant lastEditTime;
 
     public File(String filePathString) throws IOException, NoSuchAlgorithmException {
@@ -36,7 +36,16 @@ public class File {
         return filePath;
     }
 
-    public String getSha512Hash() throws IOException, NoSuchAlgorithmException {
+    public String getSha512HashString() throws IOException, NoSuchAlgorithmException {
+        // Преобразование байтового массива в шестнадцатеричную строку
+        StringBuilder sb = new StringBuilder();
+        for (byte b : getSha512Hash()) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
+    }
+
+    public byte[] getSha512Hash() throws IOException, NoSuchAlgorithmException {
         if (sha512Hash == null) {  // Вычисляем хеш, только если он ещё не был вычислен
             sha512Hash = calculateSha512Hash();
         }
@@ -48,7 +57,7 @@ public class File {
     }
 
     // Приватный метод для вычисления хеша
-    private String calculateSha512Hash() throws IOException, NoSuchAlgorithmException {
+    private byte[] calculateSha512Hash() throws IOException, NoSuchAlgorithmException {
         if (!Files.exists(filePath) || Files.isDirectory(filePath)) {
             throw new IOException("File does not exist or is a directory: " + filePath);
         }
@@ -61,14 +70,7 @@ public class File {
                 md.update(buffer, 0, bytesRead);
             }
         }
-        byte[] digest = md.digest();
-
-        // Преобразование байтового массива в шестнадцатеричную строку
-        StringBuilder sb = new StringBuilder();
-        for (byte b : digest) {
-            sb.append(String.format("%02x", b));
-        }
-        return sb.toString();
+        return md.digest();
     }
 
     //Пример использования

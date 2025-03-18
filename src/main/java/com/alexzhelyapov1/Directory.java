@@ -59,7 +59,7 @@ public class Directory {
                     subdirectories.add(subdirectory);
                 } else {
                     // Создаем объекты File
-                    files.add(new File(entry.toString()));
+                    files.add(new File(entry));
                 }
             }
         }
