@@ -44,6 +44,9 @@ public class Directory {
         return directoryPath;
     }
 
+    @Override
+    public String toString(){ return directoryPath.toString(); }
+
     // Инициирует сканирование директории и поддиректорий
     public void scan() throws IOException, NoSuchAlgorithmException {
         // Очищаем списки перед новым сканированием

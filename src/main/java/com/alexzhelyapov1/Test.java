@@ -55,7 +55,7 @@ public class Test {
     public static void main(String[] args) {
         try {
             CreateTestDirectory();
-            DeleteTestDirectory();
+//            DeleteTestDirectory();
         } catch (IOException e) {
             System.err.println("Error: " + e.getMessage());
             e.printStackTrace();  //  Вывод стека вызовов для отладки
