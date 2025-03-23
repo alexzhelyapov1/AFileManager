@@ -9,6 +9,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
+import java.util.Objects;
 
 public class File {
 
@@ -21,15 +22,35 @@ public class File {
     }
 
     public File(Path filePath) throws IOException, NoSuchAlgorithmException {
-        this.filePath = filePath;
-        this.sha512Hash = null;
-        this.lastEditTime = null;
         if (!Files.exists(filePath) || Files.isDirectory(filePath)) {
             throw new IOException("File does not exist or is a directory: " + filePath);
         }
+
+        this.filePath = filePath;
+        this.sha512Hash = null;
+        this.lastEditTime = null;
+
         //Получаем время изменения файла сразу же
         BasicFileAttributes attrs = Files.readAttributes(filePath, BasicFileAttributes.class);
         this.lastEditTime = attrs.lastModifiedTime().toInstant();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        File file = (File) o;
+        return Objects.equals(filePath, file.filePath); // Сравниваем по filePath
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(filePath); // Хеш-код вычисляем на основе filePath
+    }
+
+    @Override
+    public String toString() {
+        return filePath.toString(); // Для удобства отображения
     }
 
     public Path getPath() {

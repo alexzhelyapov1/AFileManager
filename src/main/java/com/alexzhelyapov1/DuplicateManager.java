@@ -8,10 +8,7 @@ import java.io.Console;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -47,7 +44,7 @@ public class DuplicateManager {
 //        });
     }
 
-    public Map<String, List<File>> duplicated(String mode) throws Exception { // Пробрасываем Exception
+    public Map<String, Set<File>> duplicated(String mode) throws Exception { // Пробрасываем Exception
         if (mode == FIND_BY_NAME) {
             return basenameDuplicated();
         } else if (mode == FIND_BY_HASH) {
@@ -58,98 +55,53 @@ public class DuplicateManager {
 
     }
 
-    public Map<String, List<File>> hashDuplicated() throws Exception { // Пробрасываем Exception
+    public Map<String, Set<File>> hashDuplicated() throws Exception { // Пробрасываем Exception
         return buildHashTable((ThrowingFunction<File, String, Exception>) File::getSha512Hash);
     }
 
-    public Map<String, List<File>> basenameDuplicated() throws ExecutionException, InterruptedException {
+    public Map<String, Set<File>> basenameDuplicated() throws ExecutionException, InterruptedException {
         return buildHashTable(File::getBaseName);
     }
 
-//    private <E extends Exception> Map<String, List<File>> buildHashTable(ThrowingFunction<File, String, E> keyExtractor) throws InterruptedException, ExecutionException, E {
-//        ConcurrentHashMap<String, List<File>> hashTable = new ConcurrentHashMap<>();
-//        List<Future<?>> futures = new ArrayList<>();
-//
-//        try (ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())) {
-//            buildHashTableRecursive(directories, keyExtractor, hashTable, executorService, futures);
-//        }
-//        // Ожидаем завершения всех задач *после* закрытия executorService
-//        for (Future<?> future : futures) {
-//            future.get(); // Получаем результат (или исключение)
-//        }
-//
-//        return hashTable;
-//    }
-//
-//    private <E extends Exception> void buildHashTableRecursive(ObservableList<Directory> currentDirectories,
-//                                                               ThrowingFunction<File, String, E> keyExtractor,
-//                                                               ConcurrentHashMap<String, List<File>> hashTable,
-//                                                               ExecutorService executorService, List<Future<?>> futures) throws E {
-//
-//        for (Directory directory : currentDirectories) {
-//            for (File file : directory.getFiles()) {
-//                Callable<Void> task = () -> {
-//                    String key = keyExtractor.apply(file);
-//                    hashTable.computeIfAbsent(key, k -> new ArrayList<>()).add(file);
-//                    return null;
-//                };
-//                futures.add(executorService.submit(task));
-//            }
-//
-//            // Рекурсивный вызов для поддиректорий, но *без* создания нового DuplicateManager
-//            if (!directory.getSubdirectories().isEmpty()) {
-//                buildHashTableRecursive(directory.getSubdirectories(), keyExtractor, hashTable, executorService, futures);
-//            }
-//        }
-//    }
+    private <E extends Exception> Map<String, Set<File>> buildHashTable(ThrowingFunction<File, String, E> keyExtractor) throws InterruptedException, ExecutionException, E {
+        ConcurrentHashMap<String, Set<File>> hashTable = new ConcurrentHashMap<>();
+        List<Future<?>> futures = new ArrayList<>();
 
-    private <E extends Exception> Map<String, List<File>> buildHashTable(ThrowingFunction<File, String, E> keyExtractor) throws InterruptedException, ExecutionException, E {
-        //Используем ConcurrentHashMap для потокобезопасности
-        ConcurrentHashMap<String, List<File>> hashTable = new ConcurrentHashMap<>();
-
-        // Создаем пул потоков с фиксированным размером, равным количеству доступных процессоров
-        // Это позволяет контролировать количество одновременно выполняемых задач.
-        List<Future<?>> futures;
         try (ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())) {
-
-            // Список для хранения Future объектов
-            futures = new ArrayList<>();
-            // Обходим все директории
-            for (Directory directory : directories) {
-                // Обходим все файлы в директории
-                for (File file : directory.getFiles()) {
-                    // Создаем задачу Callable для вычисления хеша файла
-                    Callable<Void> task = () -> {
-                        String key = keyExtractor.apply(file);
-                        hashTable.computeIfAbsent(key, k -> new ArrayList<>()).add(file);
-                        return null; // Возвращаем null, так как результат не нужен
-                    };
-                    // Отправляем задачу на выполнение в пул потоков
-                    futures.add(executorService.submit(task));
-                }
-
-//                // Рекурсивный вызов для поддиректорий
-//                if (!directory.getSubdirectories().isEmpty()) {
-//                    DuplicateManager subManager = new DuplicateManager(directory.getSubdirectories());
-//                    Map<String, List<File>> subHashTable = subManager.buildHashTable(keyExtractor);
-//
-//                    // Объединяем результаты из поддиректорий с текущими результатами
-//                    subHashTable.forEach((hash, files) ->
-//                            hashTable.computeIfAbsent(hash, k -> new ArrayList<>()).addAll(files)
-//                    );
-//                }
-            }
+            buildHashTableRecursive(new ArrayList<>(directories), keyExtractor, hashTable, executorService, futures);
         }
-        // Ожидаем завершения всех задач
+        // Ожидаем завершения всех задач *после* закрытия executorService
         for (Future<?> future : futures) {
-            future.get(); // Получаем результат (или исключение, если оно было)
+            future.get(); // Получаем результат (или исключение)
         }
 
         return hashTable;
     }
 
-    public static void printHashMap(Map<String, List<File>> map) {
-        for (Map.Entry<String, List<File>> entry : map.entrySet()) {
+    private <E extends Exception> void buildHashTableRecursive(List<Directory> currentDirectories,
+                                                               ThrowingFunction<File, String, E> keyExtractor,
+                                                               ConcurrentHashMap<String, Set<File>> hashTable,
+                                                               ExecutorService executorService, List<Future<?>> futures) throws E {
+
+        for (Directory directory : currentDirectories) {
+            for (File file : directory.getFiles()) {
+                Callable<Void> task = () -> {
+                    String key = keyExtractor.apply(file);
+                    hashTable.computeIfAbsent(key, k -> new HashSet<>()).add(file);
+                    return null;
+                };
+                futures.add(executorService.submit(task));
+            }
+
+            // Рекурсивный вызов для поддиректорий, но *без* создания нового DuplicateManager
+            if (!directory.getSubdirectories().isEmpty()) {
+                buildHashTableRecursive(directory.getSubdirectories(), keyExtractor, hashTable, executorService, futures);
+            }
+        }
+    }
+
+    public static void printHashMap(Map<String, Set<File>> map) {
+        for (Map.Entry<String, Set<File>> entry : map.entrySet()) {
             System.out.println("Key: " + entry.getKey());
             for (File file : entry.getValue()) {
                 System.out.println("    - Filepath: " + file.getPath());
@@ -157,8 +109,8 @@ public class DuplicateManager {
         }
     }
 
-    public static void printDuplicatesHashMap(Map<String, List<File>> map) {
-        for (Map.Entry<String, List<File>> entry : map.entrySet()) {
+    public static void printDuplicatesHashMap(Map<String, Set<File>> map) {
+        for (Map.Entry<String, Set<File>> entry : map.entrySet()) {
             if (entry.getValue().size() > 1) {
                 System.out.println("Key: " + entry.getKey());
                 for (File file : entry.getValue()) {
