@@ -17,6 +17,8 @@ import java.security.NoSuchAlgorithmException;
 public class TabPaneController {
     @FXML private Button addFolderButton;
     @FXML private Button findDuplicatesButton;
+    @FXML private Button createTestFolderButton;
+    @FXML private Button deleteTestFolderButton;
     @FXML private ListView<Directory> selectedFoldersListView;
     private ObservableList<Directory> selectedFolders = FXCollections.observableArrayList();
 
@@ -56,6 +58,20 @@ public class TabPaneController {
             DuplicateManager.printDuplicatesHashMap(manager.duplicated(findModeChoiceBox.getValue()));
         } catch (Exception e) {
             System.out.println("ERROR in duplicate manager.");
+        }
+    }
+    @FXML private void createTestFolder(ActionEvent event) {
+        try {
+            Test.CreateTestDirectory();
+        } catch (IOException e) {
+            System.out.println("ERROR in createTestFolder");
+        }
+    }
+    @FXML private void deleteTestFolder(ActionEvent event) {
+        try {
+            Test.DeleteTestDirectory();
+        } catch (IOException e) {
+            System.out.println("ERROR in deleteTestFolder");
         }
     }
 }

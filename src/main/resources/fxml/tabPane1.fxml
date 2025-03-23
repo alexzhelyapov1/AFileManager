@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.VBox?>
+
+<TabPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.alexzhelyapov1.TabPaneController">
+  <tabs>
+    <Tab text="Duplucates">
+         <content>
+            <VBox prefHeight="200.0" prefWidth="100.0">
+               <children>
+                  <ListView fx:id="selectedFoldersListView" prefHeight="135.0" prefWidth="600.0" />
+                  <Button fx:id="addFolderButton" mnemonicParsing="false" onAction="#addFolder" text="Add folder" />
+                  <ChoiceBox fx:id="findModeChoiceBox" prefWidth="150.0" />
+                  <Button fx:id="findDuplicatesButton" mnemonicParsing="false" onAction="#findDuplicates" text="Find duplicates" />
+                  <Button fx:id="createTestFolderButton" mnemonicParsing="false" onAction="#createTestFolder" text="Create test folder" />
+                  <Button fx:id="deleteTestFolderButton" mnemonicParsing="false" onAction="#deleteTestFolder" text="Delete test folder" />
+               </children>
+            </VBox>
+         </content>
+    </Tab>
+    <Tab text="Unimplemented">
+      <content>
+        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+      </content>
+    </Tab>
+  </tabs>
+</TabPane>
